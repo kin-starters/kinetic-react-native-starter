@@ -8,8 +8,10 @@
  * @format
  */
 
-import React from 'react';
+import {clusterApiUrl, Connection, Keypair} from '@solana/web3.js';
+import React, {useEffect, useState} from 'react';
 import {
+  Button,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -56,6 +58,21 @@ const Section: React.FC<{
 };
 
 const App = () => {
+  const conn = new Connection(clusterApiUrl('devnet'));
+  const [version, setVersion] = useState<any>('');
+  const [keypair, setKeypair] = useState<Keypair>(() => Keypair.generate());
+
+  const randomKeypair = () => {
+    setKeypair(() => Keypair.generate());
+  };
+
+  useEffect(() => {
+    if (version) {
+      return;
+    }
+    conn.getVersion().then(r => setVersion(r));
+  }, [version, setVersion]);
+
   const isDarkMode = useColorScheme() === 'dark';
 
   const backgroundStyle = {
@@ -73,20 +90,17 @@ const App = () => {
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
-          <Section title="Step One">
-            Edit <Text style={styles.highlight}>App.tsx</Text> to change this
-            screen and then come back to see your edits.
-          </Section>
-          <Section title="See Your Changes">
-            <ReloadInstructions />
-          </Section>
-          <Section title="Debug">
-            <DebugInstructions />
-          </Section>
-          <Section title="Learn More">
-            Read the docs to discover what to do next:
-          </Section>
-          <LearnMoreLinks />
+          {version ? (
+            <Section title="Version">
+              {JSON.stringify(version, null, 2)}
+            </Section>
+          ) : null}
+          {keypair ? (
+            <Section title="Keypair">
+              {JSON.stringify(keypair?.publicKey?.toBase58(), null, 2)}
+            </Section>
+          ) : null}
+          <Button title="New Keypair" onPress={randomKeypair} />
         </View>
       </ScrollView>
     </SafeAreaView>
