@@ -1,14 +1,5 @@
-/**
- * Sample React Native App
- * https://github.com/facebook/react-native
- *
- * Generated with the TypeScript template
- * https://github.com/react-native-community/react-native-template-typescript
- *
- * @format
- */
-
-import {clusterApiUrl, Connection, Keypair} from '@solana/web3.js';
+import {Keypair} from '@mogami/keypair';
+import {MogamiSdk} from '@mogami/sdk';
 import React, {useEffect, useState} from 'react';
 import {
   Button,
@@ -21,13 +12,7 @@ import {
   View,
 } from 'react-native';
 
-import {
-  Colors,
-  DebugInstructions,
-  Header,
-  LearnMoreLinks,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import {Colors, Header} from 'react-native/Libraries/NewAppScreen';
 
 const Section: React.FC<{
   title: string;
@@ -58,20 +43,29 @@ const Section: React.FC<{
 };
 
 const App = () => {
-  const conn = new Connection(clusterApiUrl('devnet'));
-  const [version, setVersion] = useState<any>('');
-  const [keypair, setKeypair] = useState<Keypair>(() => Keypair.generate());
+  const [sdk, setSdk] = useState<MogamiSdk | null>();
+  const [mnemonic, setMnemonic] = useState<string>(() =>
+    Keypair.generateMnemonic(),
+  );
+  const [keypair, setKeypair] = useState<Keypair>(
+    () => Keypair.fromMnemonicSet(mnemonic)[0],
+  );
 
-  const randomKeypair = () => {
-    setKeypair(() => Keypair.generate());
+  const randomMnemonic = () => {
+    const newMnemonic = Keypair.generateMnemonic();
+    const kp = Keypair.fromMnemonicSet(newMnemonic)[0] as Keypair;
+    setMnemonic(newMnemonic);
+    setKeypair(kp);
   };
 
   useEffect(() => {
-    if (version) {
+    if (sdk) {
       return;
     }
-    conn.getVersion().then(r => setVersion(r));
-  }, [version, setVersion]);
+    MogamiSdk.setup({index: 1, endpoint: 'devnet'}).then(res => {
+      setSdk(res);
+    });
+  }, [sdk, setSdk]);
 
   const isDarkMode = useColorScheme() === 'dark';
 
@@ -85,22 +79,25 @@ const App = () => {
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
         style={backgroundStyle}>
-        <Header />
         <View
           style={{
             backgroundColor: isDarkMode ? Colors.black : Colors.white,
           }}>
-          {version ? (
-            <Section title="Version">
-              {JSON.stringify(version, null, 2)}
+          {sdk?.sdkConfig ? (
+            <Section title="Endpoint">
+              {JSON.stringify(sdk.sdkConfig.endpoint, null, 2)}
             </Section>
           ) : null}
-          {keypair ? (
-            <Section title="Keypair">
-              {JSON.stringify(keypair?.publicKey?.toBase58(), null, 2)}
+          {sdk ? (
+            <Section title="Mogami App">
+              {JSON.stringify(sdk.config()?.app, null, 2)}
             </Section>
           ) : null}
-          <Button title="New Keypair" onPress={randomKeypair} />
+          {keypair?.publicKey ? (
+            <Section title="Public Key">{keypair?.publicKey}</Section>
+          ) : null}
+          {mnemonic ? <Section title="Mnemonic">{mnemonic}</Section> : null}
+          <Button title="New Mnemonic" onPress={randomMnemonic} />
         </View>
       </ScrollView>
     </SafeAreaView>

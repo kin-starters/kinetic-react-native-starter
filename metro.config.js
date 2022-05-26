@@ -15,6 +15,9 @@ module.exports = async () => {
       }),
     },
     resolver: {
+      extraNodeModules: {
+        stream: './node_modules/react-native-stream',
+      },
       sourceExts: [...sourceExts, 'cjs', 'svg'],
     },
   };
